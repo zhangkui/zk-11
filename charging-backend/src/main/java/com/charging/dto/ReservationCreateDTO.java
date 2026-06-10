@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 @Data
 public class ReservationCreateDTO {
 
-    @NotNull(message = "用户ID不能为空")
     private Long userId;
 
     @NotNull(message = "站点ID不能为空")

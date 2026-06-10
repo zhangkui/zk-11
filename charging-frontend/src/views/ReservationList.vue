@@ -59,8 +59,15 @@
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="280" fixed="right" align="center">
           <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              @click="handleViewDetail(row)"
+            >
+              查看详情
+            </el-button>
             <template v-if="!isAdmin">
               <el-button
                 v-if="row.status === 1"
@@ -79,7 +86,6 @@
                 取消预约
               </el-button>
             </template>
-            <span v-else>-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -119,6 +125,55 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="预约详情"
+      width="600px"
+    >
+      <el-descriptions v-if="currentDetail" :column="2" border>
+        <el-descriptions-item label="预约单号" :span="2">
+          {{ currentDetail.reservationNo }}
+        </el-descriptions-item>
+        <el-descriptions-item label="站点名称">
+          {{ getStationName(currentDetail.stationId) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="充电桩">
+          {{ getPileNo(currentDetail.pileId) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="预约状态">
+          <span :class="['status-tag', getStatusClass('reservation', currentDetail.status)]">
+            {{ getStatusName('reservation', currentDetail.status) }}
+          </span>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">
+          {{ formatDateTime(currentDetail.createTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="预约开始时间" :span="2">
+          {{ formatDateTime(currentDetail.reserveStartTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="预约结束时间" :span="2">
+          {{ formatDateTime(currentDetail.reserveEndTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="到店时间" :span="2">
+          {{ formatDateTime(currentDetail.arriveTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="取消时间" :span="2">
+          {{ formatDateTime(currentDetail.cancelTime) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="取消原因" :span="2">
+          {{ currentDetail.cancelReason || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">
+          {{ currentDetail.remark || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button type="primary" @click="detailDialogVisible = false">
+          关闭
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -141,6 +196,8 @@ const cancelReason = ref('')
 const currentCancelId = ref(null)
 const reservationList = ref([])
 const stationMap = ref({})
+const detailDialogVisible = ref(false)
+const currentDetail = ref(null)
 
 const statusFilter = ref(null)
 
@@ -204,6 +261,16 @@ const handleConfirmArrive = async (id) => {
     await reservationApi.confirmArrive(id)
     ElMessage.success('确认到店成功')
     loadData()
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const handleViewDetail = async (row) => {
+  try {
+    const detail = await reservationApi.getDetail(row.id)
+    currentDetail.value = detail
+    detailDialogVisible.value = true
   } catch (e) {
     console.error(e)
   }

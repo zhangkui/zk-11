@@ -60,8 +60,11 @@ public class ChargingReservationServiceImpl extends ServiceImpl<ChargingReservat
         }
 
         ChargingStation station = chargingStationMapper.selectById(dto.getStationId());
-        if (station == null || station.getStatus() != 1) {
-            throw new BusinessException("站点不存在或未启用");
+        if (station == null) {
+            throw new BusinessException("站点不存在");
+        }
+        if (station.getStatus() != 1) {
+            throw new BusinessException("站点已停用，无法预约");
         }
 
         ChargingPile pile = null;
@@ -73,8 +76,17 @@ public class ChargingReservationServiceImpl extends ServiceImpl<ChargingReservat
             if (!pile.getStationId().equals(dto.getStationId())) {
                 throw new BusinessException("充电桩不属于该站点");
             }
-            if (pile.getStatus() != Constants.PileStatus.IDLE) {
-                throw new BusinessException("充电桩当前不可用");
+            if (pile.getStatus() == Constants.PileStatus.IN_USE) {
+                throw new BusinessException("充电桩已占用，无法预约");
+            }
+            if (pile.getStatus() == Constants.PileStatus.RESERVED) {
+                throw new BusinessException("充电桩已被预约，无法预约");
+            }
+            if (pile.getStatus() == Constants.PileStatus.FAULT) {
+                throw new BusinessException("充电桩故障，无法预约");
+            }
+            if (pile.getStatus() == Constants.PileStatus.MAINTENANCE) {
+                throw new BusinessException("充电桩维护中，无法预约");
             }
         } else {
             LambdaQueryWrapper<ChargingPile> pileWrapper = new LambdaQueryWrapper<>();

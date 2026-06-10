@@ -8,12 +8,46 @@
         <h2 class="page-title" style="display: inline">站点详情</h2>
       </div>
       <div v-if="!isAdmin">
-        <el-button type="primary" @click="openQueueDialog" :icon="List">
-          加入排队
-        </el-button>
-        <el-button type="success" @click="openReservationDialog" :icon="Calendar">
-          立即预约
-        </el-button>
+        <el-tooltip
+          v-if="station?.status !== 1"
+          content="站点已停用，无法使用"
+          placement="bottom"
+        >
+          <el-button type="primary" disabled :icon="List">
+            加入排队
+          </el-button>
+        </el-tooltip>
+        <el-tooltip
+          v-if="station?.status !== 1"
+          content="站点已停用，无法预约"
+          placement="bottom"
+        >
+          <el-button type="success" disabled :icon="Calendar">
+            立即预约
+          </el-button>
+        </el-tooltip>
+        <template v-else>
+          <el-button type="primary" @click="openQueueDialog" :icon="List">
+            加入排队
+          </el-button>
+          <el-tooltip
+            v-if="availablePiles.length === 0"
+            content="暂无空闲充电桩"
+            placement="bottom"
+          >
+            <el-button type="success" disabled :icon="Calendar">
+              立即预约
+            </el-button>
+          </el-tooltip>
+          <el-button
+            v-else
+            type="success"
+            @click="openReservationDialog"
+            :icon="Calendar"
+          >
+            立即预约
+          </el-button>
+        </template>
       </div>
     </div>
 
@@ -85,16 +119,49 @@
             :class="[
               'pile-item',
               getPileStatusClass(pile.status),
-              { selected: selectedPile?.id === pile.id }
+              { selected: selectedPile?.id === pile.id, disabled: !canReservePile(pile) }
             ]"
             @click="selectPile(pile)"
           >
-            <div class="pile-no">{{ pile.pileNo }}</div>
-            <div class="pile-type">
-              {{ getStatusName('pileType', pile.pileType) }} · {{ pile.powerRating }}kW
-            </div>
-            <div :class="['pile-status', getPileStatusClass(pile.status)]">
-              {{ getStatusName('pile', pile.status) }}
+            <el-tooltip
+              v-if="!canReservePile(pile)"
+              :content="getPileReserveTip(pile)"
+              placement="top"
+            >
+              <div class="pile-content">
+                <div class="pile-no">{{ pile.pileNo }}</div>
+                <div class="pile-type">
+                  {{ getStatusName('pileType', pile.pileType) }} · {{ pile.powerRating }}kW
+                </div>
+                <div :class="['pile-status', getPileStatusClass(pile.status)]">
+                  {{ getStatusName('pile', pile.status) }}
+                </div>
+                <div v-if="station?.status !== 1" class="pile-disable-tip">
+                  站点停用
+                </div>
+                <div v-else-if="pile.status === 1" class="pile-disable-tip">
+                  已占用
+                </div>
+                <div v-else-if="pile.status === 2" class="pile-disable-tip">
+                  已预约
+                </div>
+                <div v-else-if="pile.status === 3" class="pile-disable-tip">
+                  故障
+                </div>
+                <div v-else-if="pile.status === 4" class="pile-disable-tip">
+                  维护中
+                </div>
+              </div>
+            </el-tooltip>
+            <div v-else class="pile-content">
+              <div class="pile-no">{{ pile.pileNo }}</div>
+              <div class="pile-type">
+                {{ getStatusName('pileType', pile.pileType) }} · {{ pile.powerRating }}kW
+              </div>
+              <div :class="['pile-status', getPileStatusClass(pile.status)]">
+                {{ getStatusName('pile', pile.status) }}
+              </div>
+              <div class="pile-enable-tip">可预约</div>
             </div>
           </div>
         </div>
@@ -234,8 +301,30 @@ const getPileStatusClass = (status) => {
   return map[status] || ''
 }
 
+const canReservePile = (pile) => {
+  if (!pile) return false
+  if (station.value?.status !== 1) return false
+  return pile.status === 0
+}
+
+const getPileReserveTip = (pile) => {
+  if (!pile) return ''
+  if (station.value?.status !== 1) return '站点已停用，无法预约'
+  if (pile.status === 1) return '充电桩已占用，无法预约'
+  if (pile.status === 2) return '充电桩已被预约，无法预约'
+  if (pile.status === 3) return '充电桩故障，无法预约'
+  if (pile.status === 4) return '充电桩维护中，无法预约'
+  return ''
+}
+
 const selectPile = (pile) => {
+  if (!canReservePile(pile)) {
+    return
+  }
   selectedPile.value = pile
+  if (reservationDialogVisible.value) {
+    reservationForm.pileId = pile.id
+  }
 }
 
 const goBack = () => {
@@ -272,7 +361,15 @@ const handleJoinQueue = async () => {
 }
 
 const openReservationDialog = () => {
-  reservationForm.pileId = null
+  if (station.value?.status !== 1) {
+    ElMessage.warning('站点已停用，无法预约')
+    return
+  }
+  if (availablePiles.value.length === 0) {
+    ElMessage.warning('暂无空闲充电桩')
+    return
+  }
+  reservationForm.pileId = selectedPile.value?.id || null
   reservationTimeRange.value = []
   reservationForm.remark = ''
   reservationDialogVisible.value = true
@@ -399,5 +496,69 @@ onMounted(() => {
   &.reserved { color: #409eff; }
   &.fault { color: #f56c6c; }
   &.maintenance { color: #909399; }
+}
+
+.pile-item {
+  position: relative;
+  padding: 16px;
+  border: 2px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #fff;
+
+  &:hover {
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  &.selected {
+    border-color: #409eff;
+    background: #ecf5ff;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    background: #f5f7fa;
+
+    &:hover {
+      box-shadow: none;
+    }
+  }
+
+  &.in-use {
+    border-color: #faecd8;
+  }
+
+  &.reserved {
+    border-color: #d9ecff;
+  }
+
+  &.fault {
+    border-color: #fde2e2;
+  }
+
+  &.maintenance {
+    border-color: #e9e9eb;
+  }
+}
+
+.pile-content {
+  width: 100%;
+  height: 100%;
+}
+
+.pile-disable-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #f56c6c;
+  font-weight: 500;
+}
+
+.pile-enable-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #67c23a;
+  font-weight: 500;
 }
 </style>
