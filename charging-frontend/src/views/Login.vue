@@ -18,9 +18,9 @@
         <el-form-item prop="phone">
           <el-input
             v-model="loginForm.phone"
-            placeholder="请输入手机号"
+            placeholder="请输入账号"
             size="large"
-            :prefix-icon="Cellphone"
+            :prefix-icon="User"
           />
         </el-form-item>
 
@@ -68,7 +68,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Lightning, Cellphone, Lock } from '@element-plus/icons-vue'
+import { Lightning, User, Lock } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
 import { useUserStore } from '@/stores/user'
 
@@ -84,8 +84,7 @@ const loginForm = reactive({
 
 const loginRules = {
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+    { required: true, message: '请输入账号', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },

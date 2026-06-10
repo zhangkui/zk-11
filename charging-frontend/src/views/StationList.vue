@@ -2,7 +2,7 @@
   <div class="container">
     <div class="page-header">
       <h2 class="page-title">充电站点</h2>
-      <el-button type="primary" @click="openAddDialog" :icon="Plus">
+      <el-button v-if="isAdmin" type="primary" @click="openAddDialog" :icon="Plus">
         新增站点
       </el-button>
     </div>
@@ -62,21 +62,23 @@
             {{ formatDateTime(row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right" align="center">
+        <el-table-column label="操作" :width="isAdmin ? 240 : 100" fixed="right" align="center">
           <template #default="{ row }">
             <el-button type="primary" link @click="goDetail(row.id)" :icon="View">
               详情
             </el-button>
-            <el-button type="primary" link @click="openEditDialog(row)" :icon="Edit">
-              编辑
-            </el-button>
-            <el-button
-              :type="row.status === 1 ? 'warning' : 'success'"
-              link
-              @click="toggleStatus(row)"
-            >
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
+            <template v-if="isAdmin">
+              <el-button type="primary" link @click="openEditDialog(row)" :icon="Edit">
+                编辑
+              </el-button>
+              <el-button
+                :type="row.status === 1 ? 'warning' : 'success'"
+                link
+                @click="toggleStatus(row)"
+              >
+                {{ row.status === 1 ? '禁用' : '启用' }}
+              </el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -136,14 +138,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshRight, View, Edit } from '@element-plus/icons-vue'
 import { stationApi } from '@/api'
 import { formatDateTime, getStatusName, getStatusClass } from '@/utils/format'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const loading = ref(false)
 const saving = ref(false)
