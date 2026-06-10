@@ -116,10 +116,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import { Location, Lightning, User, Money } from '@element-plus/icons-vue'
-import { stationApi, feeApi, recordApi } from '@/api'
+import { dashboardApi } from '@/api'
 
 const pileChartRef = ref(null)
 const trendChartRef = ref(null)
@@ -134,24 +134,61 @@ const stats = reactive({
 })
 
 const stationStats = ref([])
+const pileStatusData = ref([])
+const weekTrendData = ref([])
+
+const statusColors = {
+  '空闲': '#67c23a',
+  '使用中': '#e6a23c',
+  '预约中': '#409eff',
+  '故障': '#f56c6c',
+  '维护中': '#909399'
+}
 
 const loadStats = async () => {
   try {
-    const res = await stationApi.page({ pageNum: 1, pageSize: 100 })
-    const stations = res.records || []
-    stats.totalStations = stations.length
-    stats.totalPiles = stations.reduce((sum, s) => sum + s.totalPiles, 0)
-    stats.todayQueue = Math.floor(Math.random() * 50) + 10
-    stats.todayIncome = Math.random() * 5000 + 1000
+    const res = await dashboardApi.getStats()
+    stats.totalStations = res.totalStations || 0
+    stats.totalPiles = res.totalPiles || 0
+    stats.todayQueue = res.todayQueue || 0
+    stats.todayIncome = res.todayIncome || 0
 
-    stationStats.value = stations.map(s => ({
-      ...s,
-      todayKwh: Math.floor(Math.random() * 500) + 50,
-      todayIncome: Math.random() * 1000 + 100
-    }))
+    pileStatusData.value = res.pileStatusStats || []
+    weekTrendData.value = res.weekTrend || []
+    stationStats.value = res.stationStats || []
+
+    updatePileChart()
+    updateTrendChart()
   } catch (e) {
     console.error(e)
   }
+}
+
+const updatePileChart = () => {
+  if (!pileChart) return
+  const data = pileStatusData.value.map(item => ({
+    value: item.count,
+    name: item.statusName,
+    itemStyle: { color: statusColors[item.statusName] }
+  }))
+  pileChart.setOption({
+    series: [{ data }]
+  })
+}
+
+const updateTrendChart = () => {
+  if (!trendChart) return
+  const dates = weekTrendData.value.map(item => item.date)
+  const kwhData = weekTrendData.value.map(item => item.totalKwh || 0)
+  const incomeData = weekTrendData.value.map(item => item.totalIncome || 0)
+
+  trendChart.setOption({
+    xAxis: { data: dates },
+    series: [
+      { data: kwhData },
+      { data: incomeData }
+    ]
+  })
 }
 
 const initCharts = async () => {
@@ -172,25 +209,18 @@ const initCharts = async () => {
           label: { show: true, fontSize: 20, fontWeight: 'bold' }
         },
         labelLine: { show: false },
-        data: [
-          { value: 35, name: '空闲', itemStyle: { color: '#67c23a' } },
-          { value: 25, name: '使用中', itemStyle: { color: '#e6a23c' } },
-          { value: 15, name: '预约中', itemStyle: { color: '#409eff' } },
-          { value: 3, name: '故障', itemStyle: { color: '#f56c6c' } },
-          { value: 2, name: '维护中', itemStyle: { color: '#909399' } }
-        ]
+        data: []
       }]
     })
   }
 
   if (trendChartRef.value) {
     trendChart = echarts.init(trendChartRef.value)
-    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
     trendChart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['充电量(kWh)', '收入(元)'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', boundaryGap: false, data: days },
+      xAxis: { type: 'category', boundaryGap: false, data: [] },
       yAxis: [
         { type: 'value', name: 'kWh' },
         { type: 'value', name: '元' }
@@ -201,7 +231,7 @@ const initCharts = async () => {
           type: 'line',
           smooth: true,
           areaStyle: { opacity: 0.3 },
-          data: [120, 132, 101, 134, 90, 230, 210],
+          data: [],
           itemStyle: { color: '#409eff' }
         },
         {
@@ -210,7 +240,7 @@ const initCharts = async () => {
           smooth: true,
           yAxisIndex: 1,
           areaStyle: { opacity: 0.3 },
-          data: [180, 198, 152, 201, 135, 345, 315],
+          data: [],
           itemStyle: { color: '#67c23a' }
         }
       ]
@@ -224,8 +254,8 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
-  await loadStats()
   await initCharts()
+  await loadStats()
   window.addEventListener('resize', handleResize)
 })
 </script>

@@ -37,28 +37,30 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
-          <el-select
-            v-model="selectedUserId"
-            placeholder="切换用户"
-            style="width: 180px; margin-right: 20px"
-            @change="handleUserChange"
-          >
-            <el-option
-              v-for="user in userList"
-              :key="user.id"
-              :label="`${user.username} (${user.licensePlate})`"
-              :value="user.id"
-            />
-          </el-select>
-          <div class="user-info">
-            <el-avatar :size="32" class="user-avatar">
-              {{ currentUser?.username?.charAt(0) }}
-            </el-avatar>
-            <div class="user-detail">
-              <div class="user-name">{{ currentUser?.username }}</div>
-              <div class="user-balance">余额: ¥{{ currentUser?.balance?.toFixed(2) }}</div>
+          <el-dropdown trigger="click" @command="handleCommand">
+            <div class="user-info">
+              <el-avatar :size="32" class="user-avatar">
+                {{ currentUser?.username?.charAt(0) }}
+              </el-avatar>
+              <div class="user-detail">
+                <div class="user-name">{{ currentUser?.username }}</div>
+                <div class="user-balance">余额: ¥{{ currentUser?.balance?.toFixed(2) }}</div>
+              </div>
+              <el-icon class="arrow-icon"><ArrowDown /></el-icon>
             </div>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">
+                  <el-icon><User /></el-icon>
+                  个人中心
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon>
+                  退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
 
@@ -74,26 +76,45 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api'
+import { ArrowDown, User, SwitchButton } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const currentUser = computed(() => userStore.currentUser)
-const userList = computed(() => userStore.userList)
-const selectedUserId = ref(userStore.userId)
 
 const menuRoutes = computed(() => {
   return route.matched[0]?.children?.filter(r => !r.hidden) || []
 })
 
-const handleUserChange = (userId) => {
-  const user = userList.value.find(u => u.id === userId)
-  if (user) {
-    userStore.setCurrentUser(user)
+const handleCommand = async (command) => {
+  if (command === 'profile') {
+    router.push('/profile')
+  } else if (command === 'logout') {
+    try {
+      await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      if (currentUser.value?.id) {
+        await userApi.logout(currentUser.value.id)
+      }
+      userStore.setCurrentUser(null)
+      localStorage.removeItem('userId')
+      ElMessage.success('已退出登录')
+      router.push('/login')
+    } catch (e) {
+      if (e !== 'cancel') {
+        console.error(e)
+      }
+    }
   }
 }
 
@@ -101,10 +122,6 @@ onMounted(async () => {
   try {
     const list = await userApi.list()
     userStore.setUserList(list)
-    if (list.length > 0 && !userStore.currentUser) {
-      userStore.setCurrentUser(list[0])
-      selectedUserId.value = list[0].id
-    }
   } catch (e) {
     console.error('获取用户列表失败', e)
   }
@@ -183,6 +200,19 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #f5f7fa;
+  }
+
+  .arrow-icon {
+    color: #909399;
+    font-size: 12px;
+  }
 }
 
 .user-avatar {

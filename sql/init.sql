@@ -49,6 +49,7 @@ CREATE TABLE user (
     id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
     username VARCHAR(50) NOT NULL COMMENT '用户名',
     phone VARCHAR(20) NOT NULL COMMENT '手机号',
+    password VARCHAR(100) NOT NULL COMMENT '密码（加密存储）',
     license_plate VARCHAR(20) COMMENT '车牌号',
     balance DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '账户余额',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
@@ -180,8 +181,8 @@ INSERT INTO charging_pile (station_id, pile_no, pile_type, power_rating, status)
 (4, 'WJ-009', 2, 7.00, 0), (4, 'WJ-010', 2, 7.00, 0), (4, 'WJ-011', 2, 7.00, 0), (4, 'WJ-012', 2, 7.00, 0),
 (4, 'WJ-013', 2, 7.00, 0), (4, 'WJ-014', 2, 7.00, 0), (4, 'WJ-015', 2, 7.00, 0);
 
-INSERT INTO user (username, phone, license_plate, balance, status) VALUES
-('张三', '13800138001', '京A12345', 500.00, 1),
-('李四', '13800138002', '京B67890', 300.00, 1),
-('王五', '13800138003', '京C11111', 1000.00, 1),
-('赵六', '13800138004', '京D22222', 200.00, 1);
+INSERT INTO user (username, phone, password, license_plate, balance, status) VALUES
+('张三', '13800138001', 'e10adc3949ba59abbe56e057f20f883e', '京A12345', 500.00, 1),
+('李四', '13800138002', 'e10adc3949ba59abbe56e057f20f883e', '京B67890', 300.00, 1),
+('王五', '13800138003', 'e10adc3949ba59abbe56e057f20f883e', '京C11111', 1000.00, 1),
+('赵六', '13800138004', 'e10adc3949ba59abbe56e057f20f883e', '京D22222', 200.00, 1);

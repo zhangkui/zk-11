@@ -1,6 +1,9 @@
+# 阿里云镜像源版本 - 适用于国内网络环境
+# 使用说明：将此文件重命名为 docker-compose.yml 后使用
+
 services:
   mysql:
-    image: mysql:8.0
+    image: registry.cn-hangzhou.aliyuncs.com/library/mysql:8.0
     container_name: charging-mysql
     restart: unless-stopped
     environment:
@@ -25,7 +28,7 @@ services:
       start_period: 30s
 
   redis:
-    image: redis:7-alpine
+    image: registry.cn-hangzhou.aliyuncs.com/library/redis:7-alpine
     container_name: charging-redis
     restart: unless-stopped
     environment:

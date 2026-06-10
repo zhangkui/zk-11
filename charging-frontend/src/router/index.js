@@ -1,10 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { userApi } from '@/api'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录', public: true }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { title: '注册', public: true }
+  },
+  {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
-    redirect: '/station',
+    redirect: '/dashboard',
     children: [
       {
         path: 'station',
@@ -48,6 +62,12 @@ const routes = [
         name: 'Dashboard',
         component: () => import('@/views/Dashboard.vue'),
         meta: { title: '数据看板', icon: 'DataAnalysis' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/Profile.vue'),
+        meta: { title: '个人中心', icon: 'User' }
       }
     ]
   }
@@ -58,11 +78,40 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   if (to.meta.title) {
     document.title = to.meta.title + ' - 新能源汽车充电排队与预约系统'
   }
-  next()
+
+  const userStore = useUserStore()
+  const userId = localStorage.getItem('userId')
+
+  if (to.meta.public) {
+    if (userId && userStore.currentUser) {
+      next('/dashboard')
+    } else {
+      next()
+    }
+    return
+  }
+
+  if (!userId) {
+    next('/login')
+    return
+  }
+
+  if (!userStore.currentUser) {
+    try {
+      const user = await userApi.getInfo(userId)
+      userStore.setCurrentUser(user)
+      next()
+    } catch (e) {
+      localStorage.removeItem('userId')
+      next('/login')
+    }
+  } else {
+    next()
+  }
 })
 
 export default router
