@@ -2,7 +2,7 @@
   <div class="container">
     <div class="page-header">
       <h2 class="page-title">排队叫号</h2>
-      <div>
+      <div v-if="isAdmin">
         <el-select
           v-model="selectedStationId"
           placeholder="选择站点"
@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <div v-if="currentQueue" class="queue-display">
+    <div v-if="isAdmin && currentQueue" class="queue-display">
       <div class="queue-label">当前叫号</div>
       <div class="queue-number">{{ String(currentQueue.queueNumber).padStart(3, '0') }}</div>
       <div class="queue-label">{{ currentQueue.stationName }}</div>
@@ -109,14 +109,17 @@
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 0 || row.status === 1"
-              type="danger"
-              link
-              @click="handleCancel(row.id)"
-            >
-              取消排队
-            </el-button>
+            <template v-if="!isAdmin">
+              <el-button
+                v-if="row.status === 0 || row.status === 1"
+                type="danger"
+                link
+                @click="handleCancel(row.id)"
+              >
+                取消排队
+              </el-button>
+            </template>
+            <span v-else>-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -137,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Bell } from '@element-plus/icons-vue'
 import { queueApi, stationApi } from '@/api'
@@ -145,6 +148,8 @@ import { formatDateTime, getStatusName, getStatusClass } from '@/utils/format'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const loading = ref(false)
 const queueList = ref([])

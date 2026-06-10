@@ -18,7 +18,11 @@ public class UserInfoVO {
 
     private BigDecimal balance;
 
+    private Integer role;
+
     private Integer status;
+
+    private String token;
 
     private LocalDateTime createTime;
 }

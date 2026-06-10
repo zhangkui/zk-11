@@ -8,10 +8,17 @@ export const useUserStore = defineStore('user', () => {
 
   const userId = computed(() => currentUser.value?.id)
 
+  const userRole = computed(() => currentUser.value?.role || parseInt(localStorage.getItem('userRole')) || 0)
+
+  const isAdmin = computed(() => userRole.value === 2)
+
   const isLoggedIn = computed(() => currentUser.value !== null)
 
   const setCurrentUser = (user) => {
     currentUser.value = user
+    if (user?.role) {
+      localStorage.setItem('userRole', user.role)
+    }
   }
 
   const setUserList = (list) => {
@@ -24,13 +31,23 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const logout = () => {
+    currentUser.value = null
+    userList.value = []
+    localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
+  }
+
   return {
     currentUser,
     userList,
     userId,
+    userRole,
+    isAdmin,
     isLoggedIn,
     setCurrentUser,
     setUserList,
-    updateBalance
+    updateBalance,
+    logout
   }
 })

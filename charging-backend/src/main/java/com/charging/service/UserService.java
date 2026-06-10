@@ -18,4 +18,6 @@ public interface UserService extends IService<User> {
     void updateInfo(Long id, UserUpdateDTO dto);
 
     void logout(Long id);
+
+    boolean removeById(Long id);
 }

@@ -5,7 +5,9 @@
         <el-icon :size="32" color="#409eff">
           <Lightning />
         </el-icon>
-        <span class="logo-text">充电管理系统</span>
+        <span class="logo-text">
+          {{ isAdmin ? '充电管理后台' : '充电服务平台' }}
+        </span>
       </div>
       <el-menu
         :default-active="$route.path"
@@ -32,11 +34,16 @@
       <el-header class="header">
         <div class="header-left">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item :to="{ path: isAdmin ? '/dashboard' : '/station' }">
+              {{ isAdmin ? '管理首页' : '服务首页' }}
+            </el-breadcrumb-item>
             <el-breadcrumb-item>{{ $route.meta.title }}</el-breadcrumb-item>
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <el-tag :type="isAdmin ? 'danger' : 'primary'" class="role-tag">
+            {{ isAdmin ? '管理员' : '普通用户' }}
+          </el-tag>
           <el-dropdown trigger="click" @command="handleCommand">
             <div class="user-info">
               <el-avatar :size="32" class="user-avatar">
@@ -44,7 +51,9 @@
               </el-avatar>
               <div class="user-detail">
                 <div class="user-name">{{ currentUser?.username }}</div>
-                <div class="user-balance">余额: ¥{{ currentUser?.balance?.toFixed(2) }}</div>
+                <div class="user-balance" v-if="!isAdmin">
+                  余额: ¥{{ currentUser?.balance?.toFixed(2) }}
+                </div>
               </div>
               <el-icon class="arrow-icon"><ArrowDown /></el-icon>
             </div>
@@ -88,9 +97,15 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const currentUser = computed(() => userStore.currentUser)
+const isAdmin = computed(() => userStore.isAdmin)
 
 const menuRoutes = computed(() => {
-  return route.matched[0]?.children?.filter(r => !r.hidden) || []
+  const routes = route.matched[0]?.children?.filter(r => !r.hidden) || []
+  return routes.filter(r => {
+    const roles = r.meta?.roles
+    if (!roles) return true
+    return roles.includes(userStore.userRole)
+  })
 })
 
 const handleCommand = async (command) => {
@@ -103,11 +118,8 @@ const handleCommand = async (command) => {
         cancelButtonText: '取消',
         type: 'warning'
       })
-      if (currentUser.value?.id) {
-        await userApi.logout(currentUser.value.id)
-      }
-      userStore.setCurrentUser(null)
-      localStorage.removeItem('userId')
+      await userApi.logout()
+      userStore.logout()
       ElMessage.success('已退出登录')
       router.push('/login')
     } catch (e) {
@@ -119,11 +131,13 @@ const handleCommand = async (command) => {
 }
 
 onMounted(async () => {
-  try {
-    const list = await userApi.list()
-    userStore.setUserList(list)
-  } catch (e) {
-    console.error('获取用户列表失败', e)
+  if (isAdmin.value) {
+    try {
+      const list = await userApi.list()
+      userStore.setUserList(list)
+    } catch (e) {
+      console.error('获取用户列表失败', e)
+    }
   }
 })
 </script>
@@ -149,7 +163,7 @@ onMounted(async () => {
   border-bottom: 1px solid #e4e7ed;
 
   .logo-text {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: #303133;
   }
@@ -194,6 +208,11 @@ onMounted(async () => {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.role-tag {
+  margin-right: 8px;
 }
 
 .user-info {

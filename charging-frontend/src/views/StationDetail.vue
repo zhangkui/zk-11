@@ -7,7 +7,7 @@
         </el-button>
         <h2 class="page-title" style="display: inline">站点详情</h2>
       </div>
-      <div>
+      <div v-if="!isAdmin">
         <el-button type="primary" @click="openQueueDialog" :icon="List">
           加入排队
         </el-button>
@@ -220,6 +220,8 @@ const reservationForm = reactive({
   reserveEndTime: null,
   remark: ''
 })
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const queueCount = computed(() => station.value?.queueCount || 0)
 

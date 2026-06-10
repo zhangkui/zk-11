@@ -88,14 +88,16 @@
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="row.payStatus === 0"
-              type="success"
-              link
-              @click="handlePay(row)"
-            >
-              去支付
-            </el-button>
+            <template v-if="!isAdmin">
+              <el-button
+                v-if="row.payStatus === 0"
+                type="success"
+                link
+                @click="handlePay(row)"
+              >
+                去支付
+              </el-button>
+            </template>
             <el-button type="primary" link @click="viewDetail(row)">
               详情
             </el-button>
@@ -235,6 +237,8 @@ import { formatDateTime, getStatusName, getStatusClass } from '@/utils/format'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const loading = ref(false)
 const submitting = ref(false)

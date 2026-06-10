@@ -1,6 +1,8 @@
 package com.charging.controller;
 
+import com.charging.common.Constants;
 import com.charging.common.Result;
+import com.charging.common.UserContext;
 import com.charging.service.DashboardService;
 import com.charging.vo.DashboardStatsVO;
 import jakarta.annotation.Resource;
@@ -17,6 +19,7 @@ public class DashboardController {
 
     @GetMapping("/stats")
     public Result<DashboardStatsVO> getStats() {
+        UserContext.validateUserRole(Constants.UserRole.ADMIN);
         return Result.success(dashboardService.getStats());
     }
 }

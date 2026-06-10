@@ -61,22 +61,25 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 1"
-              type="success"
-              link
-              @click="handleConfirmArrive(row.id)"
-            >
-              确认到店
-            </el-button>
-            <el-button
-              v-if="row.status === 0 || row.status === 1"
-              type="danger"
-              link
-              @click="handleCancel(row)"
-            >
-              取消预约
-            </el-button>
+            <template v-if="!isAdmin">
+              <el-button
+                v-if="row.status === 1"
+                type="success"
+                link
+                @click="handleConfirmArrive(row.id)"
+              >
+                确认到店
+              </el-button>
+              <el-button
+                v-if="row.status === 0 || row.status === 1"
+                type="danger"
+                link
+                @click="handleCancel(row)"
+              >
+                取消预约
+              </el-button>
+            </template>
+            <span v-else>-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -120,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight } from '@element-plus/icons-vue'
 import { reservationApi, stationApi } from '@/api'
@@ -128,6 +131,8 @@ import { formatDateTime, getStatusName, getStatusClass } from '@/utils/format'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+
+const isAdmin = computed(() => userStore.isAdmin)
 
 const loading = ref(false)
 const submitting = ref(false)

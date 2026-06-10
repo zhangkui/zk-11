@@ -53,7 +53,7 @@
 
         <div class="login-tips">
           <el-alert
-            title="测试账号：13800138001 / 123456"
+            title="测试账号：用户 13800138001 / 123456，管理员 admin / 123456"
             type="info"
             :closable="false"
             show-icon
@@ -100,10 +100,16 @@ const handleLogin = async () => {
       loading.value = true
       try {
         const user = await userApi.login(loginForm)
+        if (user.token) {
+          localStorage.setItem('token', user.token)
+        }
         userStore.setCurrentUser(user)
-        localStorage.setItem('userId', user.id)
         ElMessage.success('登录成功')
-        router.push('/dashboard')
+        if (user.role === 2) {
+          router.push('/dashboard')
+        } else {
+          router.push('/station')
+        }
       } catch (e) {
         console.error(e)
       } finally {

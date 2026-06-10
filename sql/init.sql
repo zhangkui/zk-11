@@ -52,12 +52,15 @@ CREATE TABLE user (
     password VARCHAR(100) NOT NULL COMMENT '密码（加密存储）',
     license_plate VARCHAR(20) COMMENT '车牌号',
     balance DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '账户余额',
+    role TINYINT NOT NULL DEFAULT 1 COMMENT '角色：1-普通用户，2-管理员',
     status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+    is_default TINYINT NOT NULL DEFAULT 0 COMMENT '是否默认账号：0-否，1-是',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
     UNIQUE KEY uk_phone (phone),
-    INDEX idx_license_plate (license_plate)
+    INDEX idx_license_plate (license_plate),
+    INDEX idx_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 CREATE TABLE charging_reservation (
@@ -181,8 +184,9 @@ INSERT INTO charging_pile (station_id, pile_no, pile_type, power_rating, status)
 (4, 'WJ-009', 2, 7.00, 0), (4, 'WJ-010', 2, 7.00, 0), (4, 'WJ-011', 2, 7.00, 0), (4, 'WJ-012', 2, 7.00, 0),
 (4, 'WJ-013', 2, 7.00, 0), (4, 'WJ-014', 2, 7.00, 0), (4, 'WJ-015', 2, 7.00, 0);
 
-INSERT INTO user (username, phone, password, license_plate, balance, status) VALUES
-('张三', '13800138001', 'e10adc3949ba59abbe56e057f20f883e', '京A12345', 500.00, 1),
-('李四', '13800138002', 'e10adc3949ba59abbe56e057f20f883e', '京B67890', 300.00, 1),
-('王五', '13800138003', 'e10adc3949ba59abbe56e057f20f883e', '京C11111', 1000.00, 1),
-('赵六', '13800138004', 'e10adc3949ba59abbe56e057f20f883e', '京D22222', 200.00, 1);
+INSERT INTO user (username, phone, password, license_plate, balance, role, status, is_default) VALUES
+('系统管理员', 'admin', 'e10adc3949ba59abbe56e057f20f883e', NULL, 0.00, 2, 1, 1),
+('张三', '13800138001', 'e10adc3949ba59abbe56e057f20f883e', '京A12345', 500.00, 1, 1, 0),
+('李四', '13800138002', 'e10adc3949ba59abbe56e057f20f883e', '京B67890', 300.00, 1, 1, 0),
+('王五', '13800138003', 'e10adc3949ba59abbe56e057f20f883e', '京C11111', 1000.00, 1, 1, 0),
+('赵六', '13800138004', 'e10adc3949ba59abbe56e057f20f883e', '京D22222', 200.00, 1, 1, 0);

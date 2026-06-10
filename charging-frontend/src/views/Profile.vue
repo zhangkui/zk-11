@@ -134,9 +134,8 @@ const rules = {
 }
 
 const loadUserInfo = async () => {
-  if (!currentUser.value?.id) return
   try {
-    const info = await userApi.getInfo(currentUser.value.id)
+    const info = await userApi.getInfo()
     userStore.setCurrentUser(info)
     form.username = info.username
     form.phone = info.phone
@@ -163,14 +162,14 @@ const loadStats = async () => {
 }
 
 const handleSubmit = async () => {
-  if (!formRef.value || !currentUser.value?.id) return
+  if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
       try {
         const data = { ...form }
         if (!data.password) delete data.password
-        await userApi.updateInfo(currentUser.value.id, data)
+        await userApi.updateInfo(data)
         ElMessage.success('修改成功')
         await loadUserInfo()
       } catch (e) {
@@ -198,11 +197,8 @@ const handleLogout = async () => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    if (currentUser.value?.id) {
-      await userApi.logout(currentUser.value.id)
-    }
-    userStore.setCurrentUser(null)
-    localStorage.removeItem('userId')
+    await userApi.logout()
+    userStore.logout()
     ElMessage.success('已退出登录')
     router.push('/login')
   } catch (e) {

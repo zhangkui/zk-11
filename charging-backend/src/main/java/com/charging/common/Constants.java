@@ -14,6 +14,14 @@ public class Constants {
 
     public static final String REDIS_QUEUE_NUMBER_KEY = REDIS_KEY_PREFIX + "queue:number:";
 
+    public static final String REDIS_USER_TOKEN_KEY = REDIS_KEY_PREFIX + "user:token:";
+
+    public static final String REQUEST_HEADER_TOKEN = "Authorization";
+
+    public static final String REQUEST_ATTR_USER_ID = "userId";
+
+    public static final String REQUEST_ATTR_USER_ROLE = "userRole";
+
     public static interface PileStatus {
         int IDLE = 0;
         int IN_USE = 1;
@@ -60,5 +68,10 @@ public class Constants {
         int BALANCE = 1;
         int WECHAT = 2;
         int ALIPAY = 3;
+    }
+
+    public static interface UserRole {
+        int USER = 1;
+        int ADMIN = 2;
     }
 }

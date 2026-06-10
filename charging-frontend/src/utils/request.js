@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 const service = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_API || '/api',
@@ -9,6 +10,10 @@ const service = axios.create({
 service.interceptors.request.use(
   config => {
     config.headers['Content-Type'] = 'application/json;charset=utf-8'
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers['Authorization'] = token
+    }
     return config
   },
   error => {
@@ -20,6 +25,20 @@ service.interceptors.response.use(
   response => {
     const res = response.data
     if (res.code !== 200) {
+      if (res.code === 401) {
+        ElMessageBox.confirm('登录状态已过期，请重新登录', '系统提示', {
+          confirmButtonText: '重新登录',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          const userStore = useUserStore()
+          userStore.setCurrentUser(null)
+          localStorage.removeItem('token')
+          localStorage.removeItem('userRole')
+          window.location.href = '/login'
+        }).catch(() => {})
+        return Promise.reject(new Error(res.message || '登录已过期'))
+      }
       ElMessage({
         message: res.message || '请求失败',
         type: 'error',
@@ -39,7 +58,13 @@ service.interceptors.response.use(
           confirmButtonText: '重新登录',
           cancelButtonText: '取消',
           type: 'warning'
-        })
+        }).then(() => {
+          const userStore = useUserStore()
+          userStore.setCurrentUser(null)
+          localStorage.removeItem('token')
+          localStorage.removeItem('userRole')
+          window.location.href = '/login'
+        }).catch(() => {})
       } else if (status === 403) {
         ElMessage.error('没有权限访问')
       } else if (status === 404) {

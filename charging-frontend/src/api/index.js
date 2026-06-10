@@ -51,9 +51,10 @@ export const userApi = {
   getDetail: (id) => request.get(`/user/${id}`),
   login: (data) => request.post('/user/login', data),
   register: (data) => request.post('/user/register', data),
-  getInfo: (id) => request.get(`/user/info/${id}`),
-  updateInfo: (id, data) => request.put(`/user/${id}`, data),
-  logout: (id) => request.post(`/user/logout/${id}`)
+  getInfo: () => request.get('/user/info'),
+  updateInfo: (data) => request.put('/user/info', data),
+  logout: () => request.post('/user/logout'),
+  delete: (id) => request.delete(`/user/${id}`)
 }
 
 export const dashboardApi = {

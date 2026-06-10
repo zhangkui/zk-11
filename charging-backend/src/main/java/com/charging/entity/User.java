@@ -22,5 +22,9 @@ public class User extends BaseEntity {
 
     private BigDecimal balance;
 
+    private Integer role;
+
     private Integer status;
+
+    private Integer isDefault;
 }

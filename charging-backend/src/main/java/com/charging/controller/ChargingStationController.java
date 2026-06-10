@@ -1,7 +1,9 @@
 package com.charging.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.charging.common.Constants;
 import com.charging.common.Result;
+import com.charging.common.UserContext;
 import com.charging.dto.StationQueryDTO;
 import com.charging.dto.StationSaveDTO;
 import com.charging.entity.ChargingStation;
@@ -36,6 +38,7 @@ public class ChargingStationController {
     @Operation(summary = "新增/编辑站点")
     @PostMapping("/save")
     public Result<Void> save(@Valid @RequestBody StationSaveDTO dto) {
+        UserContext.validateUserRole(Constants.UserRole.ADMIN);
         chargingStationService.saveStation(dto);
         return Result.success();
     }
@@ -43,6 +46,7 @@ public class ChargingStationController {
     @Operation(summary = "更新站点状态")
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        UserContext.validateUserRole(Constants.UserRole.ADMIN);
         chargingStationService.updateStatus(id, status);
         return Result.success();
     }
@@ -50,6 +54,7 @@ public class ChargingStationController {
     @Operation(summary = "删除站点")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
+        UserContext.validateUserRole(Constants.UserRole.ADMIN);
         chargingStationService.removeById(id);
         return Result.success();
     }
